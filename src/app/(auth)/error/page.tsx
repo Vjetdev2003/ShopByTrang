@@ -1,9 +1,10 @@
 'use client';
 
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-export default function AuthErrorPage() {
+function AuthErrorContent() {
     const searchParams = useSearchParams();
     const error = searchParams.get('error');
 
@@ -39,9 +40,9 @@ export default function AuthErrorPage() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
                             </svg>
                         </div>
-                        
+
                         <h2 className="text-lg font-medium text-neutral-800 mb-2">Lỗi đăng nhập</h2>
-                        
+
                         <p className="text-neutral-600 mb-6">
                             {getErrorMessage(error)}
                         </p>
@@ -53,14 +54,14 @@ export default function AuthErrorPage() {
                         )}
 
                         <div className="space-y-3">
-                            <Link 
+                            <Link
                                 href="/login"
                                 className="block w-full bg-neutral-900 text-white py-3 text-sm uppercase tracking-wider hover:bg-neutral-800 transition-colors text-center"
                             >
                                 Thử lại
                             </Link>
-                            
-                            <Link 
+
+                            <Link
                                 href="/"
                                 className="block w-full border border-neutral-300 text-neutral-700 py-3 text-sm uppercase tracking-wider hover:bg-neutral-50 transition-colors text-center"
                             >
@@ -71,5 +72,17 @@ export default function AuthErrorPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AuthErrorPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+                <div className="text-neutral-500">Đang tải...</div>
+            </div>
+        }>
+            <AuthErrorContent />
+        </Suspense>
     );
 }
