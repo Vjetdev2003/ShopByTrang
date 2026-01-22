@@ -308,22 +308,29 @@ async function main() {
   ];
 
   for (const productData of products) {
-    const { variants, ...productInfo } = productData;
-    
+    const { variants, tags, ...productInfo } = productData;
+
     const product = await prisma.product.create({
       data: {
         ...productInfo,
+        tags: JSON.stringify(tags) as any,
         status: 'ACTIVE',
       },
     });
 
     for (const variantData of variants) {
-      const { basePrice, quantity, ...variantInfo } = variantData;
+      const { basePrice, quantity, images, ...rest } = variantData;
       const salePrice = 'salePrice' in variantData ? variantData.salePrice : undefined;
-      
+
+      const variantDetails = { ...rest };
+      if ('salePrice' in variantDetails) {
+        delete (variantDetails as any).salePrice;
+      }
+
       const variant = await prisma.variant.create({
         data: {
-          ...variantInfo,
+          ...variantDetails,
+          images: JSON.stringify(images) as any,
           productId: product.id,
         },
       });

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/db/prisma';
+import { ProductStatus } from '@prisma/client';
 
 export async function GET(request: Request) {
     try {
@@ -13,9 +14,9 @@ export async function GET(request: Request) {
             category: {
                 slug: category
             },
-            status: 'ACTIVE'
+            status: ProductStatus.ACTIVE
         } : {
-            status: 'ACTIVE'
+            status: ProductStatus.ACTIVE
         };
 
         const products = await prisma.product.findMany({
