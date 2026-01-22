@@ -8,7 +8,7 @@ type TagsType = ProductCreateInput['tags'];
 type VariantCreateInput = Prisma.VariantCreateInput;
 type ImagesType = VariantCreateInput['images'];
 
-const p: TagsType = "string"; // Should pass if String
-const v: ImagesType = "string"; // Should pass if String
+const p: TagsType = ["string"]; // ✅ Correct: Array of strings
+const v: ImagesType = ["string"]; // ✅ Correct: Array of strings
 
 console.log('Types checked');
