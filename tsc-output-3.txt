@@ -1,2 +1,0 @@
-﻿src/app/api/admin/orders/[id]/route.ts(83,36): error TS18048: 'session.user' is possibly 'undefined'.
-src/app/api/admin/products/[id]/route.ts(134,25): error TS2353: Object literal may only specify known properties, and 'promoPrice' does not exist in type 'Without<PricingCreateInput, PricingUncheckedCreateInput> & PricingUncheckedCreateInput'.
