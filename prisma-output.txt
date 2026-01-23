@@ -1,0 +1,51 @@
+﻿npx : warn The 
+configuration 
+property 
+`package.json#prisma` 
+is deprecated and 
+will be removed in 
+Prisma 7. Please 
+migrate to a Prisma 
+config file (e.g., 
+`prisma.config.ts`).
+At line:1 char:1
++ npx prisma generate 
+2>&1 | Out-File 
+-FilePath 
+prisma-output.txt 
+-Enco ...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (warn The c   
+ onfig...ma.config    
+.ts`).:String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+For more information, 
+see: https://pris.ly/p
+risma-config
+
+Environment variables 
+loaded from .env
+Prisma schema loaded from prisma\schema.prisma
+Error: 
+EPERM: operation not 
+permitted, rename 'C:\
+Users\Administrator\Do
+wnloads\Web\ShopByTran
+g\node_modules\.prisma
+\client\query_engine-w
+indows.dll.node.tmp237
+48' -> 'C:\Users\Admin
+istrator\Downloads\Web
+\ShopByTrang\node_modu
+les\.prisma\client\que
+ry_engine-windows.dll.
+node'
+
+

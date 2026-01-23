@@ -21,23 +21,44 @@ model User {
   avatar        String?
   role          Role      @default(CUSTOMER)
   emailVerified DateTime?
+  note          String? // Ghi chú về khách hàng
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  accounts  Account[]
-  addresses Address[]
-  sessions  Session[]
-  orders    Order[]
-  reviews   Review[]
+  accounts    Account[]
+  addresses   Address[]
+  sessions    Session[]
+  orders      Order[]
+  reviews     Review[]
+  measurement CustomerMeasurement?
+  cart        Cart?
 
   @@index([email])
   @@index([phone])
 }
 
+// Số đo khách hàng (đặc thù áo dài)
+model CustomerMeasurement {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  height      Float? // Chiều cao (cm)
+  weight      Float? // Cân nặng (kg)
+  bust        Float? // Vòng 1 (cm)
+  waist       Float? // Vòng 2 (cm)
+  hips        Float? // Vòng 3 (cm)
+  shoulder    Float? // Vai (cm)
+  armLength   Float? // Dài tay (cm)
+  dressLength Float? // Dài áo dài (cm)
+  note        String? // Ghi chú số đo
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
 model Address {
   id        String  @id @default(cuid())
   userId    String
-  label     String  // "Home", "Office"
+  label     String // "Home", "Office"
   fullName  String
   phone     String
   street    String
@@ -91,13 +112,15 @@ enum Role {
 // ==================== CATALOG ====================
 
 model Category {
-  id        String  @id @default(cuid())
-  slug      String  @unique
-  name      String
-  nameVi    String? // Vietnamese name
-  parentId  String?
-  image     String?
-  sortOrder Int     @default(0)
+  id          String  @id @default(cuid())
+  slug        String  @unique
+  name        String
+  nameVi      String? // Vietnamese name
+  description String?
+  parentId    String?
+  image       String?
+  sortOrder   Int     @default(0)
+  isActive    Boolean @default(true)
 
   parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children Category[] @relation("CategoryHierarchy")
@@ -116,6 +139,8 @@ model Product {
   brand       String        @default("BY TRANG")
   tags        String        @default("[]") // JSON array
   status      ProductStatus @default(DRAFT)
+  images      String        @default("[]") // JSON array
+  isFeatured  Boolean       @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -135,14 +160,16 @@ model Variant {
   color     String
   colorHex  String
   size      String
-  images    String  @default("[]") // JSON array
+  material  String? // Chất liệu vải: Lụa, Gấm, Nhung, Đũi...
+  images    String   @default("[]") // JSON array
   weight    Float?
   createdAt DateTime @default(now())
 
-  product   Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  pricing   Pricing?
-  inventory Inventory?
+  product    Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  pricing    Pricing?
+  inventory  Inventory?
   orderItems OrderItem[]
+  cartItems  CartItem[]
 
   @@index([productId])
   @@index([color, size])
@@ -153,8 +180,8 @@ model Pricing {
   id        String    @id @default(cuid())
   variantId String    @unique
   currency  String    @default("VND")
-  basePrice Int       // Store in smallest unit (VND)
-  salePrice Int?
+  basePrice Int // Giá gốc
+  salePrice Int? // Giá khuyến mãi
   saleStart DateTime?
   saleEnd   DateTime?
 
@@ -196,17 +223,23 @@ model Order {
   discount      Int         @default(0)
   total         Int
   paymentMethod String?
-  note          String?
+  note          String? // Ghi chú từ khách
+  internalNote  String? // Ghi chú nội bộ
+  couponId      String?
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
 
-  user    User        @relation(fields: [userId], references: [id])
-  address Address     @relation(fields: [addressId], references: [id])
-  items   OrderItem[]
+  user           User                 @relation(fields: [userId], references: [id])
+  address        Address              @relation(fields: [addressId], references: [id])
+  items          OrderItem[]
+  coupon         Coupon?              @relation(fields: [couponId], references: [id])
+  statusHistory  OrderStatusHistory[]
+  returnRequests ReturnRequest[]
 
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([couponId])
 }
 
 model OrderItem {
@@ -214,7 +247,7 @@ model OrderItem {
   orderId   String
   variantId String
   quantity  Int
-  price     Int    // Price at time of purchase
+  price     Int // Price at time of purchase
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   variant Variant @relation(fields: [variantId], references: [id])
@@ -222,29 +255,145 @@ model OrderItem {
   @@index([orderId])
 }
 
+// Lịch sử trạng thái đơn hàng
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  note      String?
+  changedBy String // Admin userId
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}
+
 enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
+  PENDING // Chờ xác nhận
+  CONFIRMED // Đã xác nhận
+  PROCESSING // Đang xử lý
+  SHIPPED // Đang giao
+  DELIVERED // Hoàn thành
+  CANCELLED // Đã hủy
 }
 
 // ==================== REVIEWS ====================
 
 model Review {
-  id        String   @id @default(cuid())
-  productId String
-  userId    String
-  rating    Int      // 1-5
-  comment   String?
-  images    String  @default("[]") // JSON array
-  createdAt DateTime @default(now())
+  id            String    @id @default(cuid())
+  productId     String
+  userId        String
+  rating        Int // 1-5
+  comment       String?
+  images        String    @default("[]") // JSON array
+  isApproved    Boolean   @default(false)
+  adminResponse String? // Phản hồi từ admin
+  respondedAt   DateTime?
+  createdAt     DateTime  @default(now())
 
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   user    User    @relation(fields: [userId], references: [id])
 
   @@index([productId])
   @@index([userId])
+  @@index([isApproved])
+}
+
+// ==================== COUPONS ====================
+
+model Coupon {
+  id             String       @id @default(cuid())
+  code           String       @unique
+  description    String?
+  discountType   DiscountType @default(PERCENTAGE)
+  discountValue  Int // % hoặc VND
+  minOrderAmount Int? // Đơn tối thiểu
+  maxDiscount    Int? // Giảm tối đa (với %)
+  usageLimit     Int? // Số lần sử dụng tối đa
+  usedCount      Int          @default(0)
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+
+  orders Order[]
+
+  @@index([code])
+  @@index([isActive])
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+// ==================== RETURNS ====================
+
+model ReturnRequest {
+  id           String       @id @default(cuid())
+  orderId      String
+  reason       String
+  description  String?
+  images       String       @default("[]") // JSON array
+  status       ReturnStatus @default(PENDING)
+  resolution   String? // Cách xử lý
+  refundAmount Int?
+  processedBy  String? // Admin userId
+  processedAt  DateTime?
+  createdAt    DateTime     @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+
+  @@index([orderId])
+  @@index([status])
+}
+
+enum ReturnStatus {
+  PENDING // Chờ xử lý
+  APPROVED // Đã duyệt
+  REJECTED // Từ chối
+  COMPLETED // Hoàn thành
+}
+
+// ==================== SETTINGS ====================
+
+model StoreSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+  type  String @default("string") // string, number, boolean, json
+}
+
+model ShippingZone {
+  id       String  @id @default(cuid())
+  name     String // "Huế", "Miền Trung", "Toàn quốc"
+  cities   String // JSON array of city names
+  fee      Int
+  freeOver Int? // Miễn phí trên số tiền này
+  isActive Boolean @default(true)
+}
+
+// ==================== CART ====================
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String?    @unique // Optional for guest carts (handled via cookie/session later)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  items     CartItem[]
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  variantId String
+  quantity  Int      @default(1)
+  
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  variant Variant @relation(fields: [variantId], references: [id])
+
+  @@unique([cartId, variantId])
 }

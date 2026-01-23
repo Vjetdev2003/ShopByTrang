@@ -1,13 +1,36 @@
 'use client';
 
 import Link from "next/link";
-import Image from "next/image";
 import { useSession, signOut } from "next-auth/react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ShoppingBag, Search } from "lucide-react";
 
 export default function Header() {
     const { data: session, status } = useSession();
     const [showUserMenu, setShowUserMenu] = useState(false);
+    const [cartCount, setCartCount] = useState(0);
+
+    // Fetch cart count
+    useEffect(() => {
+        const fetchCart = async () => {
+            try {
+                const res = await fetch('/api/cart');
+                if (res.ok) {
+                    const data = await res.json();
+                    const count = data.cart?.items?.reduce((sum: number, item: { quantity: number }) => sum + item.quantity, 0) || 0;
+                    setCartCount(count);
+                }
+            } catch {
+                // Ignore errors
+            }
+        };
+        fetchCart();
+
+        // Listen for cart updates
+        const handleCartUpdate = () => fetchCart();
+        window.addEventListener('cart-updated', handleCartUpdate);
+        return () => window.removeEventListener('cart-updated', handleCartUpdate);
+    }, []);
 
     const handleSignOut = () => {
         signOut({ callbackUrl: '/' });
@@ -87,11 +110,20 @@ export default function Header() {
                             </Link>
                         )}
 
-                        <button className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                            </svg>
-                        </button>
+                        {/* Search Icon */}
+                        <Link href="/search" className="p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                            <Search className="w-5 h-5" strokeWidth={1.5} />
+                        </Link>
+
+                        {/* Cart Icon */}
+                        <Link href="/cart" className="relative p-2 hover:bg-neutral-100 rounded-full transition-colors">
+                            <ShoppingBag className="w-5 h-5" strokeWidth={1.5} />
+                            {cartCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-5 h-5 bg-neutral-900 text-white text-xs rounded-full flex items-center justify-center">
+                                    {cartCount > 99 ? '99+' : cartCount}
+                                </span>
+                            )}
+                        </Link>
                     </div>
                 </div >
             </div >

@@ -4,33 +4,42 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Create categories
+  // Use upsert to avoid Unique constraint violation if re-running
   const categories = await Promise.all([
-    prisma.category.create({
-      data: {
+    prisma.category.upsert({
+      where: { slug: 'ao-dai' },
+      update: {},
+      create: {
         slug: 'ao-dai',
         name: 'Áo Dài',
         nameVi: 'Áo Dài',
         sortOrder: 1,
       },
     }),
-    prisma.category.create({
-      data: {
+    prisma.category.upsert({
+      where: { slug: 'du-xuan' },
+      update: {},
+      create: {
         slug: 'du-xuan',
         name: 'Du Xuân',
         nameVi: 'Du Xuân',
         sortOrder: 2,
       },
     }),
-    prisma.category.create({
-      data: {
+    prisma.category.upsert({
+      where: { slug: 'nang-tho' },
+      update: {},
+      create: {
         slug: 'nang-tho',
         name: 'Nàng Thơ',
         nameVi: 'Nàng Thơ',
         sortOrder: 3,
       },
     }),
-    prisma.category.create({
-      data: {
+    prisma.category.upsert({
+      where: { slug: 'summer' },
+      update: {},
+      create: {
         slug: 'summer',
         name: 'Summer Collection',
         nameVi: 'Bộ Sưu Tập Hè',
@@ -40,13 +49,14 @@ async function main() {
   ]);
 
   // Create products with variants - Based on BY TRANG style
+  // Note: We need to find the category ID from the array of created/existing categories
   const products = [
     // ÁO DÀI COLLECTION
     {
       slug: 'ao-dai-lua-hong-pastel',
       name: 'Áo Dài Lụa Hồng Pastel',
       description: 'Áo dài lụa cao cấp màu hồng pastel nhẹ nhàng, thiết kế cổ điển với đường may tinh tế. Phù hợp cho các dịp lễ tết, cưới hỏi.',
-      categoryId: categories[0].id,
+      categorySlug: 'ao-dai',
       tags: ['áo dài', 'lụa', 'hồng pastel', 'cổ điển'],
       variants: [
         {
@@ -85,7 +95,7 @@ async function main() {
       slug: 'ao-dai-trang-hoa-sen',
       name: 'Áo Dài Trắng Hoa Sen',
       description: 'Áo dài trắng tinh khôi với họa tiết hoa sen thêu tay tinh xảo. Biểu tượng của sự thanh khiết và nét đẹp truyền thống Việt Nam.',
-      categoryId: categories[0].id,
+      categorySlug: 'ao-dai',
       tags: ['áo dài', 'trắng', 'hoa sen', 'thêu tay'],
       variants: [
         {
@@ -112,7 +122,7 @@ async function main() {
       slug: 'ao-dai-do-cam-tham',
       name: 'Áo Dài Đỏ Cẩm Thạm',
       description: 'Áo dài màu đỏ cẩm thạm sang trọng, chất liệu lụa cao cấp. Thiết kế hiện đại nhưng vẫn giữ được nét truyền thống.',
-      categoryId: categories[0].id,
+      categorySlug: 'ao-dai',
       tags: ['áo dài', 'đỏ cẩm thạm', 'sang trọng', 'hiện đại'],
       variants: [
         {
@@ -141,7 +151,7 @@ async function main() {
       slug: 'dam-du-xuan-do-ruc',
       name: 'Đầm Du Xuân Đỏ Rực',
       description: 'Đầm du xuân màu đỏ rực rỡ, thiết kế A-line thanh lịch. Mang lại may mắn và thịnh vượng cho năm mới.',
-      categoryId: categories[1].id,
+      categorySlug: 'du-xuan',
       tags: ['đầm', 'du xuân', 'đỏ rực', 'may mắn'],
       variants: [
         {
@@ -170,7 +180,7 @@ async function main() {
       slug: 'set-ao-quan-xuan-vang',
       name: 'Set Áo Quần Xuân Vàng',
       description: 'Bộ set áo quần màu vàng tươi, phong cách hiện đại cho mùa xuân. Chất liệu cotton cao cấp, thoải mái cả ngày.',
-      categoryId: categories[1].id,
+      categorySlug: 'du-xuan',
       tags: ['set', 'xuân', 'vàng tươi', 'hiện đại'],
       variants: [
         {
@@ -199,7 +209,7 @@ async function main() {
       slug: 'dam-nang-tho-xanh-mint',
       name: 'Đầm Nàng Thơ Xanh Mint',
       description: 'Đầm nàng thơ màu xanh mint nhẹ nhàng, thiết kế xòe nhẹ tôn dáng. Phong cách nữ tính và thanh lịch.',
-      categoryId: categories[2].id,
+      categorySlug: 'nang-tho',
       tags: ['đầm', 'nàng thơ', 'xanh mint', 'nữ tính'],
       variants: [
         {
@@ -226,7 +236,7 @@ async function main() {
       slug: 'ao-so-mi-nang-tho-trang',
       name: 'Áo Sơ Mi Nàng Thơ Trắng',
       description: 'Áo sơ mi trắng basic với thiết kế cổ peter pan dễ thương. Chất liệu cotton mềm mại, phù hợp đi làm và dạo phố.',
-      categoryId: categories[2].id,
+      categorySlug: 'nang-tho',
       tags: ['áo sơ mi', 'trắng', 'peter pan', 'basic'],
       variants: [
         {
@@ -255,7 +265,7 @@ async function main() {
       slug: 'dam-maxi-he-hoa-tiet',
       name: 'Đầm Maxi Hè Họa Tiết',
       description: 'Đầm maxi dài tay với họa tiết hoa nhí xinh xắn. Chất liệu voan mát mẻ, thích hợp cho mùa hè.',
-      categoryId: categories[3].id,
+      categorySlug: 'summer',
       tags: ['đầm maxi', 'hè', 'họa tiết hoa', 'voan'],
       variants: [
         {
@@ -282,7 +292,7 @@ async function main() {
       slug: 'set-crop-top-chan-vay-he',
       name: 'Set Crop Top Chân Váy Hè',
       description: 'Bộ set crop top và chân váy xòe, phong cách trẻ trung năng động. Màu sắc tươi mát cho mùa hè.',
-      categoryId: categories[3].id,
+      categorySlug: 'summer',
       tags: ['set', 'crop top', 'chân váy', 'trẻ trung'],
       variants: [
         {
@@ -308,11 +318,21 @@ async function main() {
   ];
 
   for (const productData of products) {
-    const { variants, tags, ...productInfo } = productData;
+    const { variants, tags, categorySlug, ...productInfo } = productData;
 
-    const product = await prisma.product.create({
-      data: {
+    // Find category ID from the list we just managed
+    const category = categories.find(c => c.slug === categorySlug);
+    if (!category) {
+      console.warn(`Category for product ${productInfo.slug} not found (slug: ${categorySlug}), skipping.`);
+      continue;
+    }
+
+    const product = await prisma.product.upsert({
+      where: { slug: productInfo.slug },
+      update: {},
+      create: {
         ...productInfo,
+        categoryId: category.id,
         tags: JSON.stringify(tags) as any,
         status: 'ACTIVE',
       },
@@ -327,8 +347,10 @@ async function main() {
         delete (variantDetails as any).salePrice;
       }
 
-      const variant = await prisma.variant.create({
-        data: {
+      const variant = await prisma.variant.upsert({
+        where: { sku: variantDetails.sku },
+        update: {},
+        create: {
           ...variantDetails,
           images: JSON.stringify(images) as any,
           productId: product.id,
@@ -336,8 +358,10 @@ async function main() {
       });
 
       // Create pricing
-      await prisma.pricing.create({
-        data: {
+      await prisma.pricing.upsert({
+        where: { variantId: variant.id },
+        update: {},
+        create: {
           variantId: variant.id,
           basePrice,
           salePrice: salePrice || null,
@@ -347,8 +371,10 @@ async function main() {
       });
 
       // Create inventory
-      await prisma.inventory.create({
-        data: {
+      await prisma.inventory.upsert({
+        where: { variantId: variant.id },
+        update: {},
+        create: {
           variantId: variant.id,
           quantity,
         },
@@ -361,7 +387,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error('Seed Error:', e);
     process.exit(1);
   })
   .finally(async () => {
